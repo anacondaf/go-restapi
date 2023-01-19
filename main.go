@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"reflect"
-
-	log "github.com/sirupsen/logrus"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
+	log "github.com/sirupsen/logrus"
+	"io"
+	"net/http"
+	"os"
 )
 
 func init() {
@@ -18,7 +18,6 @@ func init() {
 		log.Error("Error loading .env file")
 	}
 
-	fmt.Println(reflect.TypeOf(env))
 	log.Info(env["S3_BUCKET"])
 }
 
@@ -28,13 +27,49 @@ func main() {
 	})
 
 	app.Get("/", func(c *fiber.Ctx) error {
-		error := c.SendString("Hello World")
+		err := c.SendString("Hello World")
 
-		if error != nil {
-			return error
+		if err != nil {
+			return err
 		}
 
 		return nil
+	})
+
+	app.Post("/avatar", func(c *fiber.Ctx) error {
+		file, err := c.FormFile("avatar")
+		if err != nil {
+			return err
+		}
+
+		// Get Buffer from file
+		buffer, err := file.Open()
+
+		currentPath, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+
+		if err != nil {
+			return c.Status(http.StatusInternalServerError).JSON(map[string]interface{}{
+				"error":   1,
+				"message": err.Error(),
+			})
+		}
+
+		fileData, err := io.ReadAll(buffer)
+		if err != nil {
+			return err
+		}
+
+		err = os.WriteFile(fmt.Sprintf("%v/images/%v", currentPath, file.Filename), fileData, 0666)
+		if err != nil {
+			return err
+		}
+
+		return c.Status(200).JSON(fiber.Map{
+			"message": "OK",
+		})
 	})
 
 	app.Listen(":3000")
