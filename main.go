@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -15,7 +16,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"reflect"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -25,6 +28,8 @@ func init() {
 }
 
 func main() {
+	var wg sync.WaitGroup
+
 	// Create a new engine
 	engine := pug.New("./views", ".pug")
 
@@ -45,6 +50,9 @@ func main() {
 
 	app.Post("/avatar", func(c *fiber.Ctx) error {
 		file, err := c.FormFile("avatar")
+
+		fmt.Println(reflect.TypeOf(file))
+
 		if err != nil {
 			return err
 		}
@@ -68,6 +76,19 @@ func main() {
 		if err != nil {
 			return err
 		}
+
+		wg.Add(1)
+
+		// Upload to S3
+		go func() {
+			defer wg.Done()
+
+			awsService.PutObject(&s3.PutObjectInput{
+				Bucket: aws.String(config.GetEnv("S3_BUCKET")),
+				Key:    aws.String(fmt.Sprintf("avatar/%v-%v", timer.GetCurrentTime().Unix(), file.Filename)),
+				Body:   bytes.NewReader(fileData),
+			})
+		}()
 
 		return c.Status(200).JSON(fiber.Map{
 			"message": "OK",
@@ -98,7 +119,7 @@ func main() {
 	app.Get("/avatars", func(c *fiber.Ctx) error {
 		// Get the first page of results for ListObjectsV2 for a bucket
 		output, err := awsService.S3Client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
-			Bucket: aws.String("chatboxavatar"),
+			Bucket: aws.String(fmt.Sprintf(config.GetEnv("S3_BUCKET"))),
 			Prefix: aws.String("avatar"),
 		})
 		if err != nil {

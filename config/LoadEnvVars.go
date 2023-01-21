@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"github.com/joho/godotenv"
 	"log"
@@ -25,12 +24,12 @@ func LoadEnvVars() {
 	}
 }
 
-func GetEnv(key string) (string, error) {
+func GetEnv(key string) string {
 	env := os.Getenv(key)
 
 	if len(env) == 0 {
-		return "", errors.New(fmt.Sprintf("Cannot load env value of key %v", key))
+		log.Panic(fmt.Sprintf("Cannot load env value of key %v", key))
 	}
 
-	return env, nil
+	return env
 }

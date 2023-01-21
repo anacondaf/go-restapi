@@ -19,3 +19,11 @@ func NewS3Client() {
 
 	S3Client = s3.NewFromConfig(cfg)
 }
+
+func PutObject(cfg *s3.PutObjectInput) {
+	_, err := S3Client.PutObject(context.TODO(), cfg)
+
+	if err != nil {
+		log.Panic(err)
+	}
+}
