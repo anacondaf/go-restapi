@@ -25,6 +25,7 @@ import (
 func init() {
 	config.LoadEnvVars()
 	awsService.NewS3Client()
+	config.LoadConfig()
 }
 
 func main() {

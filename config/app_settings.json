@@ -1,0 +1,11 @@
+{
+  "DB": {
+    "DB_HOST": "localhost",
+    "DB_PORT": "3306",
+    "DB_USERNAME": "root",
+    "DB_PASS": "root@123"
+  },
+  "SERVER": {
+    "PORT": "localhost:3000"
+  }
+}
